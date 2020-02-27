@@ -20,7 +20,7 @@ Basically, its something like the following:
 - The `ARP spoofing` generates a communication between the victim and the attacker (tricking the user by saying that we are the router)
 - Later we can sniff communications on the `LAN network` and check for `non-encrypted data` passed
 
-# How it works
+## How it works
 
 Using `Scapy` lets you craft or construct your own packets, sending it by your own needs, this means that we can manipulate request data, responses and plenty more.
 
@@ -35,11 +35,24 @@ Internally does the following.
 
 Just we need to create a malformed packet which flip the `hwsrc` and `hwdst`, this will let you fool the `ARP table`, by telling that the router MAC address is our MAC address.
 
+## Forwarding traffic
+
+When the complete `MITM cycle` is done, the victim machine will lose internet connection, this makes the attack very obvious. The victim can check the `ARP table` with the `arp -a` command and see what's going on with the router. Basically this attack results in a `DoS` to the whole LAN network
+
+So, for this particular scenario, we can forward the traffic letting the router act as well, the victim machine will resolve the internet connection and the attacker will have the capability to persist the `ARP spoofing`.
+
+Check the `/proc/sys/net/ipv4/ip_forward`, on the attacker machine, if the value is `0`, which means that the interface is not supporting the network forwarding.
+
+Do `echo 1 > /proc/sys/net/ipv4/ip_forward` and run the script again.
+
+
 ## Usage
 
 Check and correct (if necessary) the hard-coded IP addresses, give execution permissions and run the file, like:
 
 `./spoofing.py`
+
+Once the program is interrupted, the restoring function is triggered. (Default MAC addresses)
 
 ## Set up
 

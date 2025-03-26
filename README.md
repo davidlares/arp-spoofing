@@ -1,71 +1,101 @@
-# ARP Spoofing
+# ARP Spoofing Tool
 
-The following repository is part of a workshop that reflects a way of performing LAN network attacks.
+#### Description
 
-The `spoofing.py` script performs an `ARP spoofing` attack with the help of `Scapy`, a Python package for packet crafting.
+This tool demonstrates how to perform an ARP spoofing attack on a Local Area Network (LAN) using Python and the `Scapy` library. The ARP spoofing attack redirects network traffic from the victim to the attacker by sending forged ARP responses, allowing for a Man-in-the-Middle (MITM) attack. The attacker impersonates the router or gateway to intercept the victim's traffic and forward it through the attacker's machine.
 
-The `ARP spoofing` attack is the foundation for intercepting connections between different users on the same subnet. Basically the script is going to perform a `MITM` connection instead of performing an original connection. The `ARP packet` allows the users to identify themself on a network, computers do not understand IP addresses, and for that, every machine has an `ARP table` which contains the `MAC addresses` and their corresponded `IP address` for each element on the LAN.
+With this script, you can simulate a MITM attack, allowing the attacker to intercept non-encrypted traffic from the target device.
 
-The whole idea is send responses ("malformed packets") to the `router` and to the `victim` telling that the router is the `MAC address` of the `attacker machine`, this will change the whole data flow and the victim's traffic will be forwarded to the attacker machine.
+#### How ARP Spoofing Works
 
-## Scenario
+1. The attacker sends fake ARP responses to both the victim and the router, associating the attacker's MAC address with the router's IP address.
+2. This causes the victim to send its traffic to the attacker, believing it to be the router.
+3. The attacker forwards the traffic to the actual router, intercepting and potentially manipulating the data.
 
-For this example, I used a` Windows 10 machine` (192.168.1.130) as the `victim`, and a `Kali machine` as the `attacker` (192.168.1.111). The router used the `GW Ip address` (the 192.168.1.1)
+#### Scenario
 
-Basically, its something like the following:
+For this example:
+- **Victim**: Windows 10 machine (`192.168.1.130`)
+- **Attacker**: Kali Linux machine (`192.168.1.111`)
+- **Router**: Default gateway (`192.168.1.1`)
 
-- The `victim` asks for the `MAC address` of the `router`
-- Sends a request, and the machine with that particular `MAC address` will respond
-- The `victim` PC will update its `ARP table` with the` MAC address` of the requested machine
-- The `ARP spoofing` generates a communication between the victim and the attacker (tricking the user by saying that we are the router)
-- Later we can sniff communications on the `LAN network` and check for `non-encrypted data` passed
+#### Steps:
 
-## How it works
+1. The victim sends an ARP request to find the MAC address of the router.
+2. The attacker sends a fake ARP response, claiming that the attacker's MAC address is associated with the router's IP.
+3. The victim updates its ARP table with the attacker's MAC address, redirecting traffic to the attacker instead of the router.
 
-Using `Scapy` lets you craft or construct your own packets, sending it by your own needs, this means that we can manipulate request data, responses and plenty more.
+#### Forwarding Traffic
 
-Internally does the following.
+To prevent a Denial of Service (DoS) situation where the victim loses internet access, you need to enable IP forwarding on the attacker's machine. This allows the attacker to pass traffic between the victim and the router, maintaining the internet connection while still intercepting traffic.
 
-1. Creates an Ethernet broadcast package using the `router MAC address`
-2. AN `ARP packet` is created with the `router IP destination`
-3. Another packet is created, and it concatenates both the `Ether` and the `ARP`. This is sent to the network (to the `router` actually)
-4. The victim will receive the `router's` `hwsrc` (hardware source) MAC address.  This part is tricky because the `source` element is the router, it is the response, with that value, we are able to perform the second part of the MITM
+To enable IP forwarding on Linux:
+```bash
+echo 1 > /proc/sys/net/ipv4/ip_forward
+```
 
-### What's behind the MITM
+#### Usage
 
-Just we need to create a malformed packet which flip the `hwsrc` and `hwdst`, this will let you fool the `ARP table`, by telling that the router MAC address is our MAC address.
+Make sure to specify the correct IP addresses and the network interface.
 
-## Forwarding traffic
+#### Command:
+```bash
+sudo ./spoofing.py -t <target_ip> -s <spoofed_ip> -i <interface>
+```
 
-When the complete `MITM cycle` is done, the victim machine will lose internet connection, this makes the attack very obvious. The victim can check the `ARP table` with the `arp -a` command and see what's going on with the router. Basically this attack results in a `DoS` to the whole LAN network
+#### Example:
+```bash
+sudo ./spoofing.py -t 192.168.1.130 -s 192.168.1.1 -i eth0
+```
 
-So, for this particular scenario, we can forward the traffic letting the router act as well, the victim machine will resolve the internet connection and the attacker will have the capability to persist the `ARP spoofing`.
+- `-t` or `--target`: The victim's IP address.
+- `-s` or `--spoof`: The IP address you want to spoof (e.g., the router).
+- `-i` or `--interface`: The network interface to use (e.g., `eth0`, `wlan0`).
 
-Check the `/proc/sys/net/ipv4/ip_forward`, on the attacker machine, if the value is `0`, which means that the interface is not supporting the network forwarding.
+When the program is interrupted (e.g., by pressing `CTRL+C`), the script will automatically restore the ARP tables of the victim and the router to their original state.
 
-Do `echo 1 > /proc/sys/net/ipv4/ip_forward` and run the script again.
+#### Setup
 
+1. (Optional) Set up a virtual environment:
+   ```bash
+   virtualenv -p python3 <env_name>
+   source <env_name>/bin/activate
+   ```
+   
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Usage
+#### Dependencies
 
-Check and correct (if necessary) the hard-coded IP addresses, give execution permissions and run the file, like:
+- **Scapy**: A powerful Python library for packet crafting and network analysis.
+- **argparse**: For command-line argument parsing.
+- **colorama**: For adding colored output to terminal messages.
 
-`./spoofing.py`
+#### Check Out My Books
 
-Once the program is interrupted, the restoring function is triggered. (Default MAC addresses)
+- **Mastering Linux Networking and Security: Essential and Advanced Techniques**  
+  [Support on BuyMeACoffee](https://www.buymeacoffee.com/halildeniz/e/315997)
 
-## Set up
+- **Mastering Scapy: A Comprehensive Guide to Network Analysis**  
+  [Support on BuyMeACoffee](https://www.buymeacoffee.com/halildeniz/e/182908)
 
-Simple, just.
+- **Mastering Python for Ethical Hacking: A Comprehensive Guide to Building Hacking Tools**  
+  [Support on BuyMeACoffee](https://buymeacoffee.com/halildeniz/e/296372)
 
-`virtualenv -p python3 <name_of_the_env>`
+#### Join the Community
 
-Important: check the `requirements.txt` for dependencies
+Feel free to join our **Production Brain** Discord server to discuss cybersecurity, Python projects, and more:  
+[Join Production Brain Discord](https://discord.gg/nGBpfMHX4u)
 
-## Credits
+This project continues to grow with community feedback and contributions!
 
- - [David E Lares](https://twitter.com/davidlares3)
+#### Credits
 
-## License
+- **Original Author**: [David E Lares](https://twitter.com/davidlares3)
+- **Updated by**: Halil İbrahim ([denizhalil.com](https://denizhalil.com))
 
- - [MIT](https://opensource.org/licenses/MIT)
+#### License
+
+- [MIT License](https://opensource.org/licenses/MIT)

@@ -61,7 +61,7 @@ When the program is interrupted (e.g., by pressing `CTRL+C`), the script will au
    virtualenv -p python3 <env_name>
    source <env_name>/bin/activate
    ```
-   
+
 2. Install dependencies:
    ```bash
    pip install -r requirements.txt
@@ -72,24 +72,6 @@ When the program is interrupted (e.g., by pressing `CTRL+C`), the script will au
 - **Scapy**: A powerful Python library for packet crafting and network analysis.
 - **argparse**: For command-line argument parsing.
 - **colorama**: For adding colored output to terminal messages.
-
-#### Check Out My Books
-
-- **Mastering Linux Networking and Security: Essential and Advanced Techniques**  
-  [Support on BuyMeACoffee](https://www.buymeacoffee.com/halildeniz/e/315997)
-
-- **Mastering Scapy: A Comprehensive Guide to Network Analysis**  
-  [Support on BuyMeACoffee](https://www.buymeacoffee.com/halildeniz/e/182908)
-
-- **Mastering Python for Ethical Hacking: A Comprehensive Guide to Building Hacking Tools**  
-  [Support on BuyMeACoffee](https://buymeacoffee.com/halildeniz/e/296372)
-
-#### Join the Community
-
-Feel free to join our **Production Brain** Discord server to discuss cybersecurity, Python projects, and more:  
-[Join Production Brain Discord](https://discord.gg/nGBpfMHX4u)
-
-This project continues to grow with community feedback and contributions!
 
 #### Credits
 
